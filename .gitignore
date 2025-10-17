@@ -63,3 +63,6 @@ n8n/.n8n/
 tmp/
 temp/
 
+
+# Credentials
+CREDENTIALS.md
