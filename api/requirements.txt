@@ -5,11 +5,11 @@ pydantic==2.5.3
 pydantic-settings==2.1.0
 
 # Database & Storage
-supabase==2.3.4
+supabase==2.10.0
 redis==5.0.1
 
 # HTTP Client
-httpx>=0.24,<0.26
+httpx>=0.24
 
 # Environment
 python-dotenv==1.0.0
