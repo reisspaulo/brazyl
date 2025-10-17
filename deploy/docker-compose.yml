@@ -1,0 +1,63 @@
+# Docker Compose para testes locais
+# Não inclui Supabase (usar serviço externo)
+version: '3.8'
+
+services:
+  # API FastAPI
+  api:
+    build:
+      context: ../api
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=dev
+      - LOG_LEVEL=DEBUG
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      - REDIS_URL=redis://redis:6379/0
+      - AVISA_API_URL=${AVISA_API_URL}
+      - AVISA_API_TOKEN=${AVISA_API_TOKEN}
+      - API_KEY=${API_KEY}
+    depends_on:
+      - redis
+    networks:
+      - brazyl-network
+    restart: unless-stopped
+  
+  # Redis para cache
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - brazyl-network
+    restart: unless-stopped
+  
+  # N8N (opcional para testes)
+  n8n:
+    image: n8nio/n8n:latest
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=admin
+      - N8N_BASIC_AUTH_PASSWORD=admin123
+      - WEBHOOK_URL=http://localhost:5678/
+    volumes:
+      - n8n-data:/home/node/.n8n
+    networks:
+      - brazyl-network
+    restart: unless-stopped
+
+volumes:
+  redis-data:
+  n8n-data:
+
+networks:
+  brazyl-network:
+    driver: bridge
+

@@ -1,0 +1,148 @@
+{
+  "name": "01 - Webhook Receiver",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "webhook/whatsapp",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-1",
+      "name": "Webhook WhatsApp",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "brazyl-whatsapp"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "phone",
+              "value": "={{ $json.from }}"
+            },
+            {
+              "name": "message",
+              "value": "={{ $json.body }}"
+            },
+            {
+              "name": "timestamp",
+              "value": "={{ $json.timestamp }}"
+            }
+          ]
+        }
+      },
+      "id": "set-1",
+      "name": "Parse Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.API_URL }}/users?whatsapp={{ $json.phone }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "http-1",
+      "name": "Get User",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [650, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "brazyl-api",
+          "name": "Brazyl API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.data.length }}",
+              "operation": "equal",
+              "value2": "0"
+            }
+          ]
+        }
+      },
+      "id": "if-1",
+      "name": "User Exists?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "workflowId": "2"
+      },
+      "id": "workflow-1",
+      "name": "Trigger Cadastro",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [1050, 200]
+    },
+    {
+      "parameters": {
+        "message": "={{ $json.message }}",
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.message.toLowerCase() }}",
+              "operation": "contains",
+              "value2": "menu"
+            }
+          ]
+        }
+      },
+      "id": "switch-1",
+      "name": "Message Router",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [1050, 400]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, message: 'Message received' } }}"
+      },
+      "id": "respond-1",
+      "name": "Respond Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1250, 300]
+    }
+  ],
+  "connections": {
+    "Webhook WhatsApp": {
+      "main": [[{"node": "Parse Message", "type": "main", "index": 0}]]
+    },
+    "Parse Message": {
+      "main": [[{"node": "Get User", "type": "main", "index": 0}]]
+    },
+    "Get User": {
+      "main": [[{"node": "User Exists?", "type": "main", "index": 0}]]
+    },
+    "User Exists?": {
+      "main": [
+        [{"node": "Trigger Cadastro", "type": "main", "index": 0}],
+        [{"node": "Message Router", "type": "main", "index": 0}]
+      ]
+    },
+    "Trigger Cadastro": {
+      "main": [[{"node": "Respond Webhook", "type": "main", "index": 0}]]
+    },
+    "Message Router": {
+      "main": [[{"node": "Respond Webhook", "type": "main", "index": 0}]]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "1"
+}
+
